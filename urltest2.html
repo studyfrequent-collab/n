@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>FinMate Pro • Complete Family Manager</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, 'Inter', sans-serif; }
+    body { background: radial-gradient(circle at 10% 30%, #eef2ff, #e0e7ff); overflow-x: hidden; }
+    .app-bar { position: fixed; top:0; left:0; right:0; background: rgba(15,23,42,0.8); backdrop-filter: blur(16px); color: white; padding: 14px 24px; display: flex; align-items: center; gap: 20px; z-index: 1100; box-shadow: 0 12px 30px rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.2); }
+    .menu-icon { font-size: 26px; background: rgba(255,255,255,0.15); border: none; color: white; cursor: pointer; border-radius: 60px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: 0.25s; }
+    .menu-icon:hover { background: rgba(255,255,255,0.3); transform: scale(0.96); }
+    .app-title { font-size: 1.7rem; font-weight: 800; background: linear-gradient(125deg, #FFFFFF, #a5f3fc, #c4b5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .drawer { position: fixed; top:0; left:-320px; width:320px; height:100%; background: rgba(255,255,255,0.98); backdrop-filter: blur(18px); z-index:1200; transition: left 0.35s cubic-bezier(0.2,0.9,0.4,1.1); box-shadow: 12px 0 35px rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.6); display: flex; flex-direction: column; }
+    .drawer.open { left: 0; }
+    .drawer-header { padding: 32px 24px 20px; border-bottom: 1px solid #eef2ff; background: linear-gradient(135deg, #f8fafc, #ffffff); }
+    .drawer-header h3 { font-size: 2rem; background: linear-gradient(135deg, #2563eb, #9333ea); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
+    .drawer-nav { display: flex; flex-direction: column; gap: 10px; padding: 20px 18px; flex:1; overflow-y: auto; }
+    .drawer-nav button { background: rgba(255,255,255,0.7); border: none; text-align: left; padding: 14px 20px; font-size: 1rem; font-weight: 600; border-radius: 60px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s; color: #1e293b; }
+    .drawer-nav button:hover { background: linear-gradient(105deg, #ffffff, #eef2ff); transform: translateX(8px); box-shadow: 0 10px 20px -8px rgba(0,0,0,0.15); color: #2563eb; }
+    .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index:1150; visibility: hidden; opacity:0; transition: 0.2s; }
+    .overlay.active { visibility: visible; opacity:1; }
+    .main-content { margin-top: 84px; padding: 24px 20px 40px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+    .page { display: none; animation: fadeUp 0.3s ease; }
+    .active-page { display: block; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-radius: 48px; padding: 28px; margin-bottom: 32px; box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.6); text-align: center; }
+    .card h2 { font-size: 1.8rem; margin-bottom: 24px; border-left: 8px solid #3b82f6; padding-left: 22px; background: linear-gradient(120deg, #1e293b, #334155); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; text-align: left; }
+    .form-group { margin-bottom: 20px; text-align: center; }
+    label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.85rem; color: #1e293b; text-transform: uppercase; text-align: center; }
+    input, select, textarea { width: 100%; max-width: 500px; margin: 0 auto; padding: 14px 18px; border: 1px solid #cbd5e1; border-radius: 48px; font-size: 0.95rem; background: white; outline: none; text-align: center; display: block; }
+    input:focus, select:focus, textarea:focus { border-color: #8b5cf6; box-shadow: 0 0 0 4px rgba(139,92,246,0.2); }
+    .row-2cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
+    .row-5cols { display: grid; grid-template-columns: repeat(5,1fr); gap: 15px; max-width: 1200px; margin: 0 auto; }
+    button { border: none; padding: 12px 28px; border-radius: 60px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.9rem; margin: 5px; }
+    .btn-primary { background: linear-gradient(105deg, #3b82f6, #7c3aed); color: white; box-shadow: 0 8px 18px rgba(59,130,246,0.4); }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 25px -8px #3b82f6; }
+    .btn-success { background: linear-gradient(105deg, #10b981, #047857); color: white; }
+    .btn-warning { background: linear-gradient(105deg, #f59e0b, #ea580c); color: white; }
+    .btn-danger { background: linear-gradient(105deg, #ef4444, #dc2626); color: white; }
+    .btn-outline { background: white; border: 1px solid #cbd5e1; color: #1f2937; }
+    .small-btn { padding: 6px 14px; font-size: 0.7rem; border-radius: 40px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
+    .summary-grid { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; justify-content: center; }
+    .summary-box { background: rgba(255,255,255,0.9); flex:1; min-width:150px; padding:20px; border-radius:32px; text-align:center; box-shadow: 0 12px 20px -12px rgba(0,0,0,0.1); border:1px solid rgba(255,255,255,0.7); }
+    .badge { background: #eef2ff; padding: 5px 14px; border-radius: 60px; font-size: 0.7rem; font-weight:600; display: inline-block; }
+    .badge-paid { background: #10b981; color: white; }
+    .badge-pending { background: linear-gradient(135deg, #f97316, #dc2626); color: white; }
+    .badge-partial { background: linear-gradient(135deg, #facc15, #eab308); color: #1e293b; }
+    .table-wrapper { overflow-x: auto; margin-top: 18px; border-radius: 32px; background: #ffffffcc; padding: 2px; text-align: center; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0 auto; }
+    th, td { padding: 14px 10px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f1f5f9; font-weight: 700; color: #0f172a; text-align: center; }
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #0f172ae6; backdrop-filter: blur(10px); color: white; padding: 14px 28px; border-radius: 80px; z-index: 1300; font-size: 0.85rem; opacity:0; transition:0.2s; pointer-events: none; }
+    .toast.show { opacity:1; }
+    .chart-container { max-width: 350px; margin: 20px auto; }
+    .progress-bar { background: #e2e8f0; border-radius: 40px; height: 10px; margin: 16px 0; overflow: hidden; }
+    .progress-fill { width:0%; height:100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.3s; }
+    .filter-bar { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; align-items: flex-end; justify-content: center; }
+    .filter-group { flex:1; min-width:130px; text-align: center; }
+    .filter-group label { font-size:0.7rem; margin-bottom:4px; }
+    @media (max-width:700px){ .row-2cols{ grid-template-columns:1fr; } .row-5cols{ grid-template-columns:1fr; } }
+    .file-manager { margin-top: 25px; border-top: 2px dashed #cbd5e1; padding-top: 20px; text-align: center; }
+    .file-row { display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 60px; padding: 8px 16px; margin-bottom: 8px; max-width: 800px; margin-left: auto; margin-right: auto; flex-wrap: wrap; gap: 10px; }
+    .center-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
+    .history-horizontal { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 20px; padding: 15px 5px; margin: 0 -10px; }
+    .exam-history-card { background: white; border-radius: 32px; padding: 16px; min-width: 280px; max-width: 320px; flex-shrink: 0; border-left: 5px solid #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: left; }
+    .exam-history-card strong { color: #1e293b; }
+    .search-dropdown { position: relative; max-width: 400px; margin: 0 auto; }
+    .search-dropdown input { width: 100%; }
+    .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 24px; max-height: 200px; overflow-y: auto; z-index: 100; display: none; text-align: left; }
+    .dropdown-list div { padding: 10px 16px; cursor: pointer; border-bottom: 1px solid #eef2ff; }
+    .dropdown-list div:hover { background: #eef2ff; }
+    .file-preview-item { background: #eef2ff; border-radius: 60px; padding: 10px 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .file-preview-item input { width: 250px; margin: 0; display: inline-block; }
+  </style>
+</head>
+<body>
+<div class="app-bar"><button class="menu-icon" id="menuToggleBtn">✨</button><span class="app-title">FinMate Pro</span></div>
+<div class="drawer" id="drawer"><div class="drawer-header"><h3>🏠 MASTER HUB</h3></div><div class="drawer-nav" id="drawerNav"></div></div>
+<div class="overlay" id="overlay"></div>
+<div class="main-content" id="mainContent"></div>
+<div id="toastMsg" class="toast"></div>
+
+<script>
+  // ==================== CONFIG ====================
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK7p8A2QpmcL02ykg6LjaNO6YBBfGukvCy1OxA9mzB2kj9n4BKH1IM0fxXZOmPn8jf-Q/exec"; // ✅ REPLACE WITH YOUR DEPLOYMENT URL
+  const APP_PASSWORD = "finmate123"; // CHANGE THIS PASSWORD
+  
+  // Password: asks every time (no expiry)
+  function checkPassword() {
+    const entered = prompt("🔐 Password required:");
+    if (entered === APP_PASSWORD) {
+      return true;
+    } else {
+      showToast("❌ Wrong password", true);
+      return false;
+    }
+  }
+
+  // ==================== DATA ====================
+  let expenses = [], loans = [], contacts = [], notes = [], transactions = [], scheduledReminders = [], credentials = [], miscItems = [], examHistory = [];
+  let chart, analysisChart, editingTransId, editingContactId, editingNoteId, editingCredId, editingExpenseId, editingMiscId, editingExamId = null;
+  let recentFolders = JSON.parse(localStorage.getItem('recentFolders') || '[]');
+
+  // ==================== HELPER FUNCTIONS ====================
+  function showToast(msg, isErr = false) { let t = document.getElementById('toastMsg'); t.innerText = msg; t.style.backgroundColor = isErr ? "#dc2626" : "#0f172a"; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+  function saveRecentFolders() { localStorage.setItem('recentFolders', JSON.stringify(recentFolders)); }
+  function addRecentFolder(name) { if (!name) return; recentFolders = recentFolders.filter(f => f !== name); recentFolders.unshift(name); if (recentFolders.length > 10) recentFolders.pop(); saveRecentFolders(); updateRecentFoldersDropdown(); }
+  function updateRecentFoldersDropdown() { let sel = document.getElementById('recentFoldersSelect'); if (sel) { sel.innerHTML = '<option value="">-- Recent Folders --</option>'; recentFolders.forEach(f => { sel.innerHTML += `<option value="${f}">📁 ${f}</option>`; }); } }
+  
+  function loadData() {
+    expenses = JSON.parse(localStorage.getItem('expenses_final') || '[]').map(e => ({ ...e, paymentMethod: e.paymentMethod || 'Cash' }));
+    loans = JSON.parse(localStorage.getItem('loans_final') || '[]'); loans.forEach(l => { l.status = l.status || 'pending'; l.paymentDate = l.paymentDate || ''; });
+    contacts = JSON.parse(localStorage.getItem('contacts_final') || '[]');
+    notes = JSON.parse(localStorage.getItem('notes_final') || '[]');
+    transactions = JSON.parse(localStorage.getItem('transactions_final') || '[]').map(t => ({ ...t, transactionDate: t.transactionDate || t.paymentDate || '', dueAmount: t.dueAmount !== undefined ? t.dueAmount : (t.dueDate ? parseFloat(t.dueDate) : 0) }));
+    scheduledReminders = JSON.parse(localStorage.getItem('scheduledReminders') || '[]');
+    credentials = JSON.parse(localStorage.getItem('credentials_final') || '[]');
+    miscItems = JSON.parse(localStorage.getItem('miscItems_final') || '[]');
+    examHistory = JSON.parse(localStorage.getItem('examHistory_final') || '[]');
+    notes.forEach(n => { if (!n.purpose) n.purpose = ''; });
+  }
+  function saveAll() {
+    localStorage.setItem('expenses_final', JSON.stringify(expenses));
+    localStorage.setItem('loans_final', JSON.stringify(loans));
+    localStorage.setItem('contacts_final', JSON.stringify(contacts));
+    localStorage.setItem('notes_final', JSON.stringify(notes));
+    localStorage.setItem('transactions_final', JSON.stringify(transactions));
+    localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders));
+    localStorage.setItem('credentials_final', JSON.stringify(credentials));
+    localStorage.setItem('miscItems_final', JSON.stringify(miscItems));
+    localStorage.setItem('examHistory_final', JSON.stringify(examHistory));
+  }
+
+  // ==================== JSONP REQUEST (for GET actions) ====================
+  function jsonpRequest(params, callback) {
+    const callbackName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    window[callbackName] = function(data) {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      callback(data);
+    };
+    let url = GOOGLE_SCRIPT_URL + '?';
+    for (let key in params) {
+      url += encodeURIComponent(key) + '=' + encodeURIComponent(params[key]) + '&';
+    }
+    url += 'callback=' + callbackName;
+    const script = document.createElement('script');
+    script.src = url;
+    document.body.appendChild(script);
+  }
+
+  // ==================== FILE MANAGEMENT APIS ====================
+  async function listFilesInFolder(folderName) {
+    return new Promise((resolve) => {
+      jsonpRequest({ action: 'listFiles', folder: folderName }, (data) => {
+        if (data && data.status === 'success' && data.files) resolve(data.files);
+        else resolve([]);
+      });
+    });
+  }
+  async function renameFileInFolder(folderName, oldName, newName) {
+    return new Promise((resolve) => {
+      jsonpRequest({ action: 'rename', folder: folderName, oldName: oldName, newName: newName }, (data) => {
+        resolve(data && data.status === 'success');
+      });
+    });
+  }
+  async function deleteFileFromFolder(folderName, filename) {
+    return new Promise((resolve) => {
+      jsonpRequest({ action: 'delete', folder: folderName, filename: filename }, (data) => {
+        resolve(data && data.status === 'success');
+      });
+    });
+  }
+  // Direct file URL (Google Drive preview link)
+  async function getFileUrl(folderName, filename) {
+    return new Promise((resolve) => {
+      jsonpRequest({ action: 'getFileUrl', folder: folderName, filename: filename }, (data) => {
+        if (data && data.status === 'success' && data.url) resolve(data.url);
+        else resolve(null);
+      });
+    });
+  }
+  async function uploadSingleFile(folderName, file, customName, overwrite) {
+    return new Promise(async (resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+        const action = overwrite ? "uploadOverwrite" : "upload";
+        try {
+          await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, folder: folderName, filename: customName, mimeType: file.type, data: base64 })
+          });
+          resolve(true);
+        } catch(err) { reject(err); }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ==================== MEDIA HUB ====================
+  let mediaFilesQueue = [];
+  function renderMediaQueue() {
+    let container = document.getElementById('selectedFilesPreview');
+    if (!container) return;
+    container.innerHTML = '';
+    mediaFilesQueue.forEach((item, idx) => {
+      let div = document.createElement('div');
+      div.className = 'file-preview-item';
+      div.innerHTML = `
+        <span>📄 ${item.file.name} (${(item.file.size/1024).toFixed(1)} KB)</span>
+        <input type="text" value="${escapeHtml(item.customName)}" class="rename-queue-input" data-index="${idx}" style="width:250px;" />
+        <button class="small-btn btn-danger remove-queue-item" data-index="${idx}">✖ Remove</button>
+      `;
+      container.appendChild(div);
+    });
+    document.querySelectorAll('.rename-queue-input').forEach(inp => {
+      inp.addEventListener('change', (e) => {
+        let idx = parseInt(inp.getAttribute('data-index'));
+        if (!isNaN(idx) && mediaFilesQueue[idx]) {
+          let newName = inp.value.trim();
+          if (newName) mediaFilesQueue[idx].customName = newName;
+          else mediaFilesQueue[idx].customName = mediaFilesQueue[idx].file.name;
+        }
+      });
+    });
+    document.querySelectorAll('.remove-queue-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        let idx = parseInt(btn.getAttribute('data-index'));
+        if (!isNaN(idx)) {
+          mediaFilesQueue.splice(idx, 1);
+          renderMediaQueue();
+        }
+      });
+    });
+  }
+  function addFilesToQueue(newFiles) {
+    if (!newFiles.length) return;
+    for (let f of newFiles) {
+      mediaFilesQueue.push({ file: f, customName: f.name });
+    }
+    renderMediaQueue();
+    showToast(`${newFiles.length} file(s) added. You can rename each before upload.`);
+  }
+  function clearMediaQueue() {
+    // Clear upload queue
+    mediaFilesQueue = [];
+    renderMediaQueue();
+    // Clear the displayed file list (imported files)
+    const container = document.getElementById('fileListContainer');
+    if (container) {
+      container.innerHTML = '<div class="badge">📂 No files loaded. Click "IMPORT FILES" to load.</div>';
+    }
+    showToast("Queue and displayed files cleared. Click IMPORT FILES to reload.");
+  }
+  async function uploadAllQueuedFiles() {
+    let folder = document.getElementById('customFolderName').value.trim();
+    if (!folder) folder = document.getElementById('presetFolderSelect').value;
+    if (!folder) folder = document.getElementById('recentFoldersSelect').value;
+    if (!folder) folder = "FinMate_Uploads";
+    let overwrite = document.getElementById('overwriteCheckbox').checked;
+    if (mediaFilesQueue.length === 0) { showToast("No files in queue!", true); return; }
+    let statusDiv = document.getElementById('multiUploadStatus');
+    let prog = document.getElementById('multiProgressFill');
+    statusDiv.innerText = "Uploading...";
+    prog.style.width = "0%";
+    let success = 0;
+    for (let i = 0; i < mediaFilesQueue.length; i++) {
+      let item = mediaFilesQueue[i];
+      let finalName = item.customName || item.file.name;
+      statusDiv.innerText = `Uploading (${i+1}/${mediaFilesQueue.length}): ${finalName}`;
+      try {
+        await uploadSingleFile(folder, item.file, finalName, overwrite);
+        success++;
+        prog.style.width = ((i+1)/mediaFilesQueue.length * 100)+"%";
+      } catch(err) { console.error(err); showToast(`Failed: ${finalName}`, true); }
+    }
+    statusDiv.innerText = `✅ ${success}/${mediaFilesQueue.length} files uploaded to "${folder}" (overwrite: ${overwrite})`;
+    showToast(`Uploaded ${success} files`);
+    addRecentFolder(folder);
+    mediaFilesQueue = [];
+    renderMediaQueue();
+    refreshFileList();
+    prog.style.width = "0%";
+  }
+  async function refreshFileList() {
+    let folder = document.getElementById('currentManageFolder').value.trim();
+    if (!folder) folder = document.getElementById('presetFolderSelect').value;
+    if (!folder) folder = "FinMate_Uploads";
+    document.getElementById('currentManageFolder').value = folder;
+    const files = await listFilesInFolder(folder);
+    const container = document.getElementById('fileListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!files.length) { container.innerHTML = '<div class="badge">📂 No files in this folder</div>'; return; }
+    files.forEach(file => {
+      const div = document.createElement('div');
+      div.className = 'file-row';
+      div.innerHTML = `
+        <span>📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)</span>
+        <div>
+          <button class="small-btn btn-primary view-file-btn" data-name="${file.name}">👁️ View</button>
+          <button class="small-btn btn-success download-file-btn" data-name="${file.name}">⬇️ Download</button>
+          <button class="small-btn btn-warning rename-file-btn" data-name="${file.name}">✏️ Rename</button>
+          <button class="small-btn btn-danger delete-file-btn" data-name="${file.name}">🗑️ Delete</button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+    // View file using direct Google Drive link
+    document.querySelectorAll('.view-file-btn').forEach(btn => {
+      btn.onclick = async () => {
+        let filename = btn.getAttribute('data-name');
+        let folderName = document.getElementById('currentManageFolder').value;
+        let url = await getFileUrl(folderName, filename);
+        if (url) {
+          window.open(url, '_blank');
+        } else {
+          showToast("Unable to get file preview link", true);
+        }
+      };
+    });
+    // Download file using direct link (triggers download)
+    document.querySelectorAll('.download-file-btn').forEach(btn => {
+      btn.onclick = async () => {
+        let filename = btn.getAttribute('data-name');
+        let folderName = document.getElementById('currentManageFolder').value;
+        let url = await getFileUrl(folderName, filename);
+        if (url) {
+          let a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.click();
+        } else {
+          showToast("Download failed", true);
+        }
+      };
+    });
+    // Rename & Delete with password check
+    document.querySelectorAll('.rename-file-btn').forEach(btn => {
+      btn.onclick = async () => {
+        if (!checkPassword()) return;
+        let oldName = btn.getAttribute('data-name');
+        let newName = prompt("Enter new name (including extension):", oldName);
+        if (newName && newName !== oldName) {
+          let folderName = document.getElementById('currentManageFolder').value;
+          if (await renameFileInFolder(folderName, oldName, newName)) {
+            showToast(`✅ Renamed to ${newName}`);
+            refreshFileList();
+          } else showToast("❌ Rename failed", true);
+        }
+      };
+    });
+    document.querySelectorAll('.delete-file-btn').forEach(btn => {
+      btn.onclick = async () => {
+        if (!checkPassword()) return;
+        let filename = btn.getAttribute('data-name');
+        if (confirm(`Delete "${filename}" permanently?`)) {
+          let folderName = document.getElementById('currentManageFolder').value;
+          if (await deleteFileFromFolder(folderName, filename)) {
+            showToast("🗑️ Deleted");
+            refreshFileList();
+          } else showToast("Delete failed", true);
+        }
+      };
+    });
+  }
+  function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+  
+  // Folder selection exclusivity
+  function syncFolderSelection(source) {
+    const preset = document.getElementById('presetFolderSelect');
+    const recent = document.getElementById('recentFoldersSelect');
+    const custom = document.getElementById('customFolderName');
+    if (source === 'preset') {
+      if (recent) recent.value = '';
+      if (custom) custom.value = '';
+    } else if (source === 'recent') {
+      if (preset) preset.value = '';
+      if (custom) custom.value = '';
+    } else if (source === 'custom') {
+      if (preset) preset.value = '';
+      if (recent) recent.value = '';
+    }
+  }
+
+  // ==================== EXPENSE ANALYSIS ====================
+  function populateAnalysisFilters() {
+    let yearsSet = new Set();
+    expenses.forEach(e => { if(e.date) yearsSet.add(e.date.substring(0,4)); });
+    let yearSelect = document.getElementById('analysisYear');
+    if(yearSelect){
+      let currentYear = yearSelect.value;
+      yearSelect.innerHTML = '<option value="">All Years</option>';
+      Array.from(yearsSet).sort().reverse().forEach(y => {
+        yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+      });
+      if(currentYear) yearSelect.value = currentYear;
+    }
+  }
+  function renderAnalysis() {
+    let filtered = [...expenses];
+    let person = document.getElementById('analysisPerson').value;
+    let method = document.getElementById('analysisPaymentMethod').value;
+    let year = document.getElementById('analysisYear').value;
+    let month = document.getElementById('analysisMonthSelect').value;
+    let fromDate = document.getElementById('analysisFromDate').value;
+    let toDate = document.getElementById('analysisToDate').value;
+    if (person) filtered = filtered.filter(e => e.person === person);
+    if (method) filtered = filtered.filter(e => e.paymentMethod === method);
+    if (year) filtered = filtered.filter(e => e.date.startsWith(year));
+    if (month) filtered = filtered.filter(e => e.date.startsWith(month));
+    if (fromDate) filtered = filtered.filter(e => e.date >= fromDate);
+    if (toDate) filtered = filtered.filter(e => e.date <= toDate);
+    let total = filtered.reduce((s, e) => s + e.amount, 0);
+    document.getElementById('analysisTotalAmount').innerHTML = `Total: ₹${total.toFixed(2)}`;
+    document.getElementById('analysisFilterInfo').innerHTML = `Records: ${filtered.length}`;
+    let tbody = document.querySelector('#analysisTable tbody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      filtered.forEach(e => {
+        let row = tbody.insertRow();
+        row.insertCell(0).innerText = e.date;
+        row.insertCell(1).innerText = e.person;
+        row.insertCell(2).innerText = e.category;
+        row.insertCell(3).innerHTML = `₹${e.amount.toFixed(2)}`;
+        row.insertCell(4).innerText = e.paymentMethod || 'Cash';
+        row.insertCell(5).innerText = e.note || '-';
+      });
+    }
+    let catMap = {};
+    filtered.forEach(e => catMap[e.category] = (catMap[e.category] || 0) + e.amount);
+    if (analysisChart) analysisChart.destroy();
+    let ctx = document.getElementById('analysisChart').getContext('2d');
+    analysisChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: Object.keys(catMap), datasets: [{ label: 'Amount (₹)', data: Object.values(catMap), backgroundColor: '#3b82f6' }] }
+    });
+  }
+  function resetAnalysisFilters() {
+    document.getElementById('analysisPerson').value = '';
+    document.getElementById('analysisPaymentMethod').value = '';
+    document.getElementById('analysisYear').value = '';
+    document.getElementById('analysisMonthSelect').value = '';
+    document.getElementById('analysisFromDate').value = '';
+    document.getElementById('analysisToDate').value = '';
+    renderAnalysis();
+  }
+
+  // ==================== EXAM PAGE ====================
+  function renderExamHistory() {
+    let container = document.getElementById('examHistoryList');
+    if (!container) return;
+    if (!examHistory.length) {
+      container.innerHTML = '<div class="badge">No exam submissions yet.</div>';
+      return;
+    }
+    let html = '<div class="history-horizontal">';
+    examHistory.forEach(entry => {
+      html += `
+        <div class="exam-history-card">
+          <div><strong>📅 ${entry.timestamp}</strong></div>
+          <div><strong>Name:</strong> ${escapeHtml(entry.fillerName)}</div>
+          <div><strong>Exam:</strong> ${escapeHtml(entry.examName)}</div>
+          <div><strong>Reg No:</strong> ${escapeHtml(entry.registrationNo)}</div>
+          <div><strong>Date:</strong> ${entry.examDate || '-'}</div>
+          <div><strong>Remarks:</strong> ${escapeHtml(entry.description || '-')}</div>
+          <div class="center-buttons" style="margin-top:10px;">
+            <button class="small-btn btn-warning edit-exam-btn" data-id="${entry.id}">✏️ Edit</button>
+            <button class="small-btn btn-danger delete-exam-btn" data-id="${entry.id}">🗑️ Delete</button>
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    document.querySelectorAll('.edit-exam-btn').forEach(btn => {
+      btn.onclick = () => {
+        let id = parseInt(btn.getAttribute('data-id'));
+        let entry = examHistory.find(e => e.id === id);
+        if (entry) {
+          document.getElementById('examFillerName').value = entry.fillerName;
+          document.getElementById('examFormName').value = entry.examName;
+          document.getElementById('examRegNo').value = entry.registrationNo;
+          document.getElementById('examPassword').value = entry.password || '';
+          document.getElementById('examDate').value = entry.examDate || '';
+          document.getElementById('examDescription').value = entry.description || '';
+          editingExamId = id;
+          document.getElementById('submitExamFormBtn').innerText = '✏️ Update Exam';
+          document.getElementById('cancelExamEditBtn').style.display = 'inline-block';
+          document.getElementById('examFormPage').scrollIntoView();
+        }
+      };
+    });
+    document.querySelectorAll('.delete-exam-btn').forEach(btn => {
+      btn.onclick = () => {
+        let id = parseInt(btn.getAttribute('data-id'));
+        examHistory = examHistory.filter(e => e.id !== id);
+        saveAll();
+        renderExamHistory();
+        showToast("Entry deleted");
+        syncExamToSheet();
+      };
+    });
+  }
+  function cancelExamEdit() {
+    editingExamId = null;
+    document.getElementById('examFillerName').value = '';
+    document.getElementById('examFormName').value = '';
+    document.getElementById('examRegNo').value = '';
+    document.getElementById('examPassword').value = '';
+    document.getElementById('examDate').value = '';
+    document.getElementById('examDescription').value = '';
+    document.getElementById('submitExamFormBtn').innerText = '📤 Submit Exam';
+    document.getElementById('cancelExamEditBtn').style.display = 'none';
+  }
+  async function submitOrUpdateExam() {
+    let filler = document.getElementById('examFillerName').value.trim();
+    let exam = document.getElementById('examFormName').value.trim();
+    let reg = document.getElementById('examRegNo').value.trim();
+    if (!filler || !exam || !reg) { showToast("Please fill all required fields", true); return; }
+    let entry = {
+      id: editingExamId || Date.now(),
+      timestamp: editingExamId ? (examHistory.find(e => e.id === editingExamId)?.timestamp || new Date().toLocaleString()) : new Date().toLocaleString(),
+      fillerName: filler,
+      examName: exam,
+      registrationNo: reg,
+      password: document.getElementById('examPassword').value,
+      examDate: document.getElementById('examDate').value,
+      description: document.getElementById('examDescription').value.trim()
+    };
+    if (editingExamId) {
+      let idx = examHistory.findIndex(e => e.id === editingExamId);
+      if (idx !== -1) examHistory[idx] = entry;
+      editingExamId = null;
+      showToast("Exam updated");
+    } else {
+      examHistory.unshift(entry);
+      showToast("Exam submitted");
+    }
+    saveAll();
+    renderExamHistory();
+    cancelExamEdit();
+    await syncExamToSheet();
+  }
+  async function syncExamToSheet() {
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet: "ExamFormsData", records: examHistory }) });
+      showToast("Synced to sheet");
+    } catch(e) { console.error(e); }
+  }
+  /*async function loadExamFromSheet() {
+    if (!checkPassword()) return;
+    if (!confirm("Load exam history from Google Sheet? This will REPLACE local data.")) return;
+    try {
+      let res = await fetch(`${GOOGLE_SCRIPT_URL}?sheet=ExamFormsData`);
+      let data = await res.json();
+      if (data.status === "success" && Array.isArray(data.records)) {
+        examHistory = data.records;
+        saveAll();
+        renderExamHistory();
+        showToast(`Loaded ${examHistory.length} exam records`);
+      } else showToast("No data found", true);
+    } catch(e) { showToast("Load failed", true); }
+  }*/
+//----------------
+async function loadExamFromSheet() {
+  if (!checkPassword()) return;
+  if (!confirm("Load exam history from Google Sheet? This will REPLACE local data.")) return;
+  try {
+    let data = await loadSheetViaJsonp("ExamFormsData");
+    if (data && data.status === "success" && Array.isArray(data.records)) {
+      examHistory = data.records;
+      saveAll();
+      renderExamHistory();
+      showToast(`Loaded ${examHistory.length} exam records`);
+    } else showToast("No data found", true);
+  } catch(e) { showToast("Load failed", true); }
+}
+
+  // ==================== EMAIL REMINDER ====================
+  let allContactsForDropdown = [];
+  function updateContactSelect() {
+    allContactsForDropdown = [...contacts];
+    renderContactDropdown('');
+  }
+  function renderContactDropdown(filter) {
+    const container = document.getElementById('contactDropdownContainer');
+    if (!container) return;
+    let filtered = allContactsForDropdown.filter(c => 
+      c.name.toLowerCase().includes(filter.toLowerCase()) || 
+      (c.email && c.email.toLowerCase().includes(filter.toLowerCase()))
+    );
+    let html = '<div class="search-dropdown"><input type="text" id="contactSearchInput" placeholder="Search contacts..." autocomplete="off" />';
+    html += '<div id="contactDropdownList" class="dropdown-list">';
+    filtered.forEach(c => {
+      html += `<div data-email="${c.email || ''}" data-name="${c.name}">${c.name} ${c.email ? '('+c.email+')' : ''}</div>`;
+    });
+    if (filtered.length === 0) html += '<div style="padding:10px;">No contacts found</div>';
+    html += '</div></div>';
+    container.innerHTML = html;
+    const searchInput = document.getElementById('contactSearchInput');
+    const dropdownList = document.getElementById('contactDropdownList');
+    if (searchInput) {
+      searchInput.value = filter;
+      searchInput.addEventListener('input', (e) => renderContactDropdown(e.target.value));
+      searchInput.addEventListener('focus', () => { if(dropdownList) dropdownList.style.display = 'block'; });
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) dropdownList.style.display = 'none';
+      });
+    }
+    document.querySelectorAll('#contactDropdownList div[data-email]').forEach(div => {
+      div.addEventListener('click', () => {
+        let email = div.getAttribute('data-email');
+        let name = div.getAttribute('data-name');
+        if (email) {
+          let manualArea = document.getElementById('manualEmails');
+          let current = manualArea.value;
+          if (current) manualArea.value = current + ', ' + email;
+          else manualArea.value = email;
+        } else {
+          showToast(`${name} has no email`, true);
+        }
+        dropdownList.style.display = 'none';
+        searchInput.value = '';
+      });
+    });
+  }
+
+  // ==================== ORIGINAL APP FUNCTIONS (preserved) ====================
+  function updateDashboard() { 
+    document.getElementById('dashTotalExpense').innerHTML = `₹${expenses.reduce((s, e) => s + e.amount, 0).toFixed(2)}`;
+    let totalLent = loans.filter(l => l.type === 'lent' && l.status !== 'paid').reduce((s, l) => s + l.amount, 0);
+    let totalBorrowed = loans.filter(l => l.type === 'borrowed' && l.status !== 'paid').reduce((s, l) => s + l.amount, 0);
+    let pendingReceive = loans.filter(l => l.type === 'lent' && l.status === 'pending').reduce((s, l) => s + l.amount, 0);
+    document.getElementById('dashTotalLent').innerHTML = `₹${totalLent.toFixed(2)}`;
+    document.getElementById('dashTotalBorrowed').innerHTML = `₹${totalBorrowed.toFixed(2)}`;
+    document.getElementById('dashPendingReceive').innerHTML = `₹${pendingReceive.toFixed(2)}`;
+    let cat = {}; expenses.forEach(e => cat[e.category] = (cat[e.category] || 0) + e.amount);
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById('expensePieChart'), { type: 'pie', data: { labels: Object.keys(cat), datasets: [{ data: Object.values(cat), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }] } });
+  }
+  function renderExpenses() { let tbody = document.querySelector('#expenseTable tbody'); if(!tbody) return; tbody.innerHTML = ''; expenses.forEach(exp => { let row = tbody.insertRow(); row.insertCell(0).innerText = exp.person; row.insertCell(1).innerText = exp.category; row.insertCell(2).innerHTML = `₹${exp.amount.toFixed(2)}`; row.insertCell(3).innerText = exp.date; row.insertCell(4).innerText = exp.time || '-'; row.insertCell(5).innerText = exp.paymentMethod || 'Cash'; row.insertCell(6).innerText = exp.note || '-'; let act = row.insertCell(7); let edit = document.createElement('button'); edit.innerText = '✏️'; edit.className = 'small-btn btn-warning'; edit.onclick = () => startEditExpense(exp.id); let del = document.createElement('button'); del.innerText = '🗑️'; del.className = 'small-btn btn-danger'; del.onclick = () => { expenses = expenses.filter(e => e.id !== exp.id); saveAll(); renderExpenses(); updateDashboard(); showToast("Deleted"); }; act.appendChild(edit); act.appendChild(del); }); populateAnalysisFilters(); }
+  function renderLoans() { let tbody = document.querySelector('#loanTable tbody'); if(!tbody) return; tbody.innerHTML = ''; loans.forEach(loan => { let row = tbody.insertRow(); row.insertCell(0).innerText = loan.type === 'lent' ? '📤 Lent' : '📥 Borrowed'; row.insertCell(1).innerText = loan.counterparty; row.insertCell(2).innerHTML = `₹${loan.amount.toFixed(2)}`; row.insertCell(3).innerText = loan.purpose || '-'; row.insertCell(4).innerText = loan.date || '-'; row.insertCell(5).innerText = loan.dueDate || '-'; row.insertCell(6).innerHTML = loan.status === 'paid' ? '<span class="badge-paid">Paid</span>' : '<span class="badge-pending">Pending</span>'; row.insertCell(7).innerText = loan.paymentDate || '-'; let act = row.insertCell(8); if (loan.status === 'pending') { let paid = document.createElement('button'); paid.innerText = '✅ Mark Paid'; paid.className = 'small-btn btn-success'; paid.onclick = () => { let d = prompt("Payment date (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(d){ loan.status='paid'; loan.paymentDate=d; saveAll(); renderLoans(); updateDashboard(); showToast(`Paid on ${d}`); } }; act.appendChild(paid); } else { let pend = document.createElement('button'); pend.innerText = '↩️ Pending'; pend.className = 'small-btn btn-outline'; pend.onclick = () => { loan.status='pending'; loan.paymentDate=''; saveAll(); renderLoans(); updateDashboard(); showToast("Pending"); }; act.appendChild(pend); } let del = document.createElement('button'); del.innerText = '🗑️'; del.className = 'small-btn btn-danger'; del.onclick = () => { loans = loans.filter(l => l.id !== loan.id); saveAll(); renderLoans(); updateDashboard(); showToast("Deleted"); }; act.appendChild(del); }); }
+  function renderTransactions() { let tbody = document.querySelector('#transactionsTable tbody'); if(!tbody) return; tbody.innerHTML = ''; transactions.forEach(t => { let row = tbody.insertRow(); row.insertCell(0).innerText = t.type || '-'; row.insertCell(1).innerText = t.party || '-'; row.insertCell(2).innerText = t.qty || '0'; row.insertCell(3).innerText = t.rate || '0'; row.insertCell(4).innerHTML = `₹${(t.amount || 0).toFixed(2)}`; row.insertCell(5).innerText = t.transactionDate || '-'; row.insertCell(6).innerHTML = `₹${(t.dueAmount || 0).toFixed(2)}`; row.insertCell(7).innerText = t.dueClearDate || '-'; let cls = t.status === 'Paid' ? 'badge-paid' : (t.status === 'Partial' ? 'badge-partial' : 'badge-pending'); row.insertCell(8).innerHTML = `<span class="${cls}">${t.status || 'Due'}</span>`; row.insertCell(9).innerText = t.remarks || '-'; let act = row.insertCell(10); let edit = document.createElement('button'); edit.innerText = '✏️'; edit.className = 'small-btn btn-warning'; edit.onclick = () => startEditTransaction(t.id); let del = document.createElement('button'); del.innerText = '🗑️'; del.className = 'small-btn btn-danger'; del.onclick = () => { transactions = transactions.filter(tr => tr.id !== t.id); saveAll(); renderTransactions(); showToast("Deleted"); }; act.appendChild(edit); act.appendChild(del); }); }
+  function renderContacts() { let tbody = document.querySelector('#contactsTable tbody'); if(!tbody) return; tbody.innerHTML = ''; contacts.forEach(c => { let row = tbody.insertRow(); row.insertCell(0).innerText = c.name; row.insertCell(1).innerText = c.email; row.insertCell(2).innerText = c.phone || ''; row.insertCell(3).innerText = c.address || ''; row.insertCell(4).innerText = c.relation || ''; let act = row.insertCell(5); let edit = document.createElement('button'); edit.innerText = '✏️'; edit.className = 'small-btn btn-warning'; edit.onclick = () => startEditContact(c.id); let del = document.createElement('button'); del.innerText = '🗑️'; del.className = 'small-btn btn-danger'; del.onclick = () => { contacts = contacts.filter(con => con.id !== c.id); saveAll(); renderContacts(); updateContactSelect(); showToast("Deleted"); }; act.appendChild(edit); act.appendChild(del); }); updateContactSelect(); }
+  function renderNotes() { let tbody = document.querySelector('#notesTable tbody'); if(!tbody) return; tbody.innerHTML = ''; notes.forEach(n => { let row = tbody.insertRow(); row.insertCell(0).innerText = n.date; row.insertCell(1).innerText = n.purpose || '—'; row.insertCell(2).innerText = n.content; let act = row.insertCell(3); let edit = document.createElement('button'); edit.innerText = '✏️'; edit.className = 'small-btn btn-warning'; edit.onclick = () => startEditNote(n.id); let pdf = document.createElement('button'); pdf.innerText = '📄 PDF'; pdf.className = 'small-btn btn-primary'; pdf.onclick = () => printNoteAsPDF(n); let del = document.createElement('button'); del.innerText = '🗑️'; del.className = 'small-btn btn-danger'; del.onclick = () => { notes = notes.filter(note => note.id !== n.id); saveAll(); renderNotes(); showToast("Note deleted"); }; act.appendChild(edit); act.appendChild(pdf); act.appendChild(del); }); }
+  function renderCredentials() { let tbody = document.querySelector('#credentialsTable tbody'); if(!tbody) return; tbody.innerHTML = ''; credentials.forEach(c => { let row = tbody.insertRow(); row.insertCell(0).innerText = c.name; row.insertCell(1).innerText = c.appId; row.insertCell(2).innerText = c.password; row.insertCell(3).innerText = c.type; row.insertCell(4).innerText = c.description || '-'; let act = row.insertCell(5); let edit = document.createElement('button'); edit.innerText = '✏️'; edit.className = 'small-btn btn-warning'; edit.onclick = () => startEditCredential(c.id); let del = document.createElement('button'); del.innerText = '🗑️'; del.className = 'small-btn btn-danger'; del.onclick = () => { credentials = credentials.filter(cred => cred.id !== c.id); saveAll(); renderCredentials(); showToast("Deleted"); }; act.appendChild(edit); act.appendChild(del); }); }
+  function renderScheduledReminders() { let container = document.getElementById('scheduledRemindersList'); if (!container) return; container.innerHTML = ''; if (!scheduledReminders.length) { container.innerHTML = '<p class="badge">No reminders yet</p>'; return; } [...scheduledReminders].reverse().forEach(r => { let div = document.createElement('div'); div.style.background = '#f8fafc'; div.style.borderRadius = '30px'; div.style.padding = '14px 18px'; div.style.marginBottom = '12px'; div.style.borderLeft = '5px solid #3b82f6'; div.innerHTML = `<div class="flex-between"><strong>📧 ${r.recipients ? r.recipients.join(', ') : r.email}</strong> <span class="badge ${r.sent ? 'badge-paid' : 'badge-pending'}">${r.sent ? 'Sent' : 'Pending'}</span></div><div>📅 ${new Date(r.scheduledTime).toLocaleString()}</div><div><strong>${r.subject}</strong></div><div>${r.message.substring(0,70)}</div><div style="margin-top:10px; display:flex; gap:8px;">${!r.sent ? `<button class="small-btn btn-success cancel-reminder" data-id="${r.id}">❌ Cancel</button>` : ''}<button class="small-btn btn-danger delete-reminder" data-id="${r.id}">🗑️ Delete</button></div>`; if (!r.sent) { let cancel = div.querySelector('.cancel-reminder'); cancel.onclick = () => { scheduledReminders = scheduledReminders.filter(s => s.id !== r.id); saveAll(); renderScheduledReminders(); showToast("Cancelled"); }; } let del = div.querySelector('.delete-reminder'); del.onclick = () => { scheduledReminders = scheduledReminders.filter(s => s.id !== r.id); saveAll(); renderScheduledReminders(); showToast("Removed"); }; container.appendChild(div); }); }
+  function renderMisc() { let tbody = document.querySelector('#miscTable tbody'); if(!tbody) return; tbody.innerHTML = ''; miscItems.forEach(item => { let row = tbody.insertRow(); for(let i=1;i<=10;i++) row.insertCell(i-1).innerText = item[`field${i}`] || ''; let act = row.insertCell(10); let edit = document.createElement('button'); edit.innerText = '✏️'; edit.className = 'small-btn btn-warning'; edit.onclick = () => startEditMisc(item.id); let del = document.createElement('button'); del.innerText = '🗑️'; del.className = 'small-btn btn-danger'; del.onclick = () => { miscItems = miscItems.filter(i => i.id !== item.id); saveAll(); renderMisc(); showToast("Deleted"); }; act.appendChild(edit); act.appendChild(del); }); }
+  // Edit functions (abbreviated but functional)
+  function startEditExpense(id) { let e = expenses.find(x => x.id === id); if(e){ editingExpenseId = id; document.getElementById('expensePerson').value = e.person; document.getElementById('expenseDate').value = e.date; document.getElementById('expenseTime').value = e.time || ''; document.getElementById('expenseAmount').value = e.amount; document.getElementById('expenseCategory').value = e.category; document.getElementById('expensePaymentMethod').value = e.paymentMethod || 'Cash'; document.getElementById('expenseNote').value = e.note || ''; document.getElementById('addExpenseBtn').innerText = '✏️ Update Expense'; document.getElementById('cancelExpenseEditBtn').style.display = 'inline-block'; } }
+  function cancelExpenseEdit() { editingExpenseId = null; document.getElementById('expensePerson').value = ''; document.getElementById('expenseDate').value = new Date().toISOString().slice(0,10); document.getElementById('expenseTime').value = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); document.getElementById('expenseAmount').value = ''; document.getElementById('expenseCategory').value = 'Food'; document.getElementById('expensePaymentMethod').value = 'Cash'; document.getElementById('expenseNote').value = ''; document.getElementById('addExpenseBtn').innerText = '💾 Save Expense'; document.getElementById('cancelExpenseEditBtn').style.display = 'none'; }
+  function addOrUpdateExpense() { let person = document.getElementById('expensePerson').value; let amt = parseFloat(document.getElementById('expenseAmount').value); if(!person || isNaN(amt)){ alert("Person & Amount required"); return; } let exp = { id: editingExpenseId || Date.now(), person, amount: amt, category: document.getElementById('expenseCategory').value, date: document.getElementById('expenseDate').value, time: document.getElementById('expenseTime').value, paymentMethod: document.getElementById('expensePaymentMethod').value, note: document.getElementById('expenseNote').value }; if(editingExpenseId){ let idx = expenses.findIndex(e => e.id === editingExpenseId); if(idx !== -1) expenses[idx] = exp; editingExpenseId = null; } else expenses.push(exp); saveAll(); renderExpenses(); updateDashboard(); showToast("Expense saved"); cancelExpenseEdit(); }
+  function startEditTransaction(id) { let t = transactions.find(tr => tr.id === id); if(t){ editingTransId = id; document.getElementById('tpParty').value = t.party; document.getElementById('tpType').value = t.type; document.getElementById('tpQuantity').value = t.qty; document.getElementById('tpRate').value = t.rate; document.getElementById('tpAmount').value = t.amount; document.getElementById('tpTransactionDate').value = t.transactionDate || ''; document.getElementById('tpDueAmount').value = t.dueAmount || 0; document.getElementById('tpDueClearDate').value = t.dueClearDate || ''; document.querySelector(`input[name="tpStatus"][value="${t.status}"]`).checked = true; document.getElementById('tpRemarks').value = t.remarks || ''; document.getElementById('saveTransactionBtn').innerText = '✏️ Update'; document.getElementById('transactionEditPanel').style.display = 'block'; } }
+  function addOrUpdateTransaction() { let party = document.getElementById('tpParty').value.trim(); if(!party){ alert("Party name required"); return; } let qty = parseFloat(document.getElementById('tpQuantity').value)||0; let rate = parseFloat(document.getElementById('tpRate').value)||0; let amount = qty*rate; let trans = { id: editingTransId || Date.now(), party, type: document.getElementById('tpType').value, qty, rate, amount, transactionDate: document.getElementById('tpTransactionDate').value, dueAmount: parseFloat(document.getElementById('tpDueAmount').value)||0, dueClearDate: document.getElementById('tpDueClearDate').value, status: document.querySelector('input[name="tpStatus"]:checked')?.value || 'Due', remarks: document.getElementById('tpRemarks').value }; if(editingTransId){ let idx = transactions.findIndex(t => t.id === editingTransId); if(idx !== -1) transactions[idx] = trans; editingTransId = null; } else transactions.push(trans); saveAll(); renderTransactions(); showToast("Transaction saved"); document.getElementById('tpParty').value=''; document.getElementById('tpQuantity').value=''; document.getElementById('tpRate').value=''; document.getElementById('tpAmount').value=''; document.getElementById('tpTransactionDate').value=''; document.getElementById('tpDueAmount').value=''; document.getElementById('tpDueClearDate').value=''; document.getElementById('tpRemarks').value=''; document.getElementById('saveTransactionBtn').innerText = '💾 Save Transaction'; document.getElementById('transactionEditPanel').style.display = 'none'; }
+  function startEditContact(id) { let c = contacts.find(con => con.id === id); if(c){ document.getElementById('contactName').value = c.name; document.getElementById('contactEmail').value = c.email; document.getElementById('contactPhone').value = c.phone || ''; document.getElementById('contactAddress').value = c.address || ''; document.getElementById('contactRelation').value = c.relation || ''; editingContactId = id; document.getElementById('saveContactBtn').innerText = '✏️ Update'; document.getElementById('contactEditPanel').style.display = 'block'; } }
+  function addOrUpdateContact() { let name = document.getElementById('contactName').value.trim(); if(!name){ alert("Name required"); return; } let contact = { id: editingContactId || Date.now(), name, email: document.getElementById('contactEmail').value, phone: document.getElementById('contactPhone').value, address: document.getElementById('contactAddress').value, relation: document.getElementById('contactRelation').value }; if(editingContactId){ let idx = contacts.findIndex(c => c.id === editingContactId); if(idx !== -1) contacts[idx] = contact; editingContactId = null; } else contacts.push(contact); saveAll(); renderContacts(); updateContactSelect(); showToast("Contact saved"); document.getElementById('contactName').value=''; document.getElementById('contactEmail').value=''; document.getElementById('contactPhone').value=''; document.getElementById('contactAddress').value=''; document.getElementById('contactRelation').value=''; document.getElementById('saveContactBtn').innerText = '💾 Save Contact'; document.getElementById('contactEditPanel').style.display = 'none'; }
+  function startEditNote(id) { let n = notes.find(note => note.id === id); if(n){ document.getElementById('notePurpose').value = n.purpose || ''; document.getElementById('noteContent').value = n.content; editingNoteId = id; document.getElementById('saveNoteBtn').innerText = '✏️ Update'; document.getElementById('noteEditPanel').style.display = 'block'; } }
+  function addOrUpdateNote() { let purpose = document.getElementById('notePurpose').value.trim(); let content = document.getElementById('noteContent').value.trim(); if(!content){ alert("Write something"); return; } let note = { id: editingNoteId || Date.now(), date: new Date().toLocaleString(), purpose, content }; if(editingNoteId){ let idx = notes.findIndex(n => n.id === editingNoteId); if(idx !== -1) notes[idx] = note; editingNoteId = null; document.getElementById('saveNoteBtn').innerText = '💾 Save Note'; } else notes.push(note); saveAll(); renderNotes(); showToast("Note saved"); document.getElementById('notePurpose').value=''; document.getElementById('noteContent').value=''; document.getElementById('noteEditPanel').style.display = 'none'; }
+  function startEditCredential(id) { let c = credentials.find(cred => cred.id === id); if(c){ document.getElementById('credName').value = c.name; document.getElementById('credAppId').value = c.appId; document.getElementById('credPassword').value = c.password; document.getElementById('credDescription').value = c.description || ''; document.getElementById('credType').value = c.type; editingCredId = id; document.getElementById('saveCredBtn').innerText = '✏️ Update'; } }
+  function addOrUpdateCredential() { let name = document.getElementById('credName').value.trim(); let appId = document.getElementById('credAppId').value.trim(); let password = document.getElementById('credPassword').value; if(!name || !appId || !password){ alert("Name, App ID and Password required"); return; } let cred = { id: editingCredId || Date.now(), name, appId, password, description: document.getElementById('credDescription').value.trim(), type: document.getElementById('credType').value, timestamp: new Date().toISOString() }; if(editingCredId){ let idx = credentials.findIndex(c => c.id === editingCredId); if(idx !== -1) credentials[idx] = cred; editingCredId = null; } else credentials.push(cred); saveAll(); renderCredentials(); showToast("Credential saved"); document.getElementById('credName').value=''; document.getElementById('credAppId').value=''; document.getElementById('credPassword').value=''; document.getElementById('credDescription').value=''; document.getElementById('credType').value='API'; document.getElementById('saveCredBtn').innerText = '💾 Save Credentials'; }
+  function printNoteAsPDF(note) { const { jsPDF } = window.jspdf; let doc = new jsPDF(); doc.setFontSize(18); doc.text("FinMate Note",20,20); doc.setFontSize(12); doc.text(`Date: ${note.date}`,20,35); doc.text(`Purpose: ${note.purpose || 'General'}`,20,50); doc.text("Content:",20,65); let lines = doc.splitTextToSize(note.content,170); doc.text(lines,20,75); doc.setFontSize(10); doc.text("Generated by FinMate Pro",20,90); doc.save(`note_${note.id}.pdf`); }
+  function startEditMisc(id) { let item = miscItems.find(i => i.id === id); if(item){ editingMiscId = id; for(let i=1;i<=10;i++) document.getElementById(`miscField${i}`).value = item[`field${i}`] || ''; document.getElementById('saveMiscBtn').innerText = '✏️ Update'; document.getElementById('cancelMiscEditBtn').style.display = 'inline-block'; } }
+  function cancelMiscEdit() { editingMiscId = null; for(let i=1;i<=10;i++) document.getElementById(`miscField${i}`).value = ''; document.getElementById('saveMiscBtn').innerText = '💾 Save Entry'; document.getElementById('cancelMiscEditBtn').style.display = 'none'; }
+  function addOrUpdateMisc() { let f1 = document.getElementById('miscField1').value.trim(); if(!f1){ alert("Field 1 required"); return; } let newItem = { id: editingMiscId || Date.now() }; for(let i=1;i<=10;i++) newItem[`field${i}`] = document.getElementById(`miscField${i}`).value.trim(); newItem.timestamp = new Date().toISOString(); if(editingMiscId){ let idx = miscItems.findIndex(i => i.id === editingMiscId); if(idx !== -1) miscItems[idx] = newItem; editingMiscId = null; } else miscItems.push(newItem); saveAll(); renderMisc(); showToast("Entry saved"); cancelMiscEdit(); }
+  /*async function loadSheetData(sheetName, targetArray, renderFunc, updateDashboardFunc) { 
+    if (!checkPassword()) return;
+    if(!confirm(`Load ${sheetName} from Google Sheet? This will REPLACE current local data.`)) return; 
+    try { let res = await fetch(`${GOOGLE_SCRIPT_URL}?sheet=${sheetName}`); let data = await res.json(); 
+    if(data.status==="success" && Array.isArray(data.records)){ 
+      if(targetArray === 'expenses'){ expenses = data.records.map(r=>({...r, paymentMethod: r.paymentMethod || 'Cash'})); saveAll(); renderFunc(); if(updateDashboardFunc) updateDashboardFunc(); showToast(`Loaded ${expenses.length} expenses`); populateAnalysisFilters(); } 
+      else if(targetArray === 'loans'){ loans = data.records; saveAll(); renderFunc(); if(updateDashboardFunc) updateDashboardFunc(); showToast(`Loaded ${loans.length} loans`); } 
+      else if(targetArray === 'contacts'){ contacts = data.records; saveAll(); renderFunc(); updateContactSelect(); showToast(`Loaded ${contacts.length} contacts`); } 
+      else if(targetArray === 'notes'){ notes = data.records; saveAll(); renderFunc(); showToast(`Loaded ${notes.length} notes`); } 
+      else if(targetArray === 'transactions'){ transactions = data.records; saveAll(); renderFunc(); showToast(`Loaded ${transactions.length} transactions`); } 
+      else if(targetArray === 'credentials'){ credentials = data.records; saveAll(); renderFunc(); showToast(`Loaded ${credentials.length} credentials`); } 
+      else if(targetArray === 'misc'){ miscItems = data.records; saveAll(); renderFunc(); showToast(`Loaded ${miscItems.length} misc entries`); } 
+    } else { showToast("No data or error", true); } } catch(e){ showToast("Load failed", true); } 
+  }*/// Helper for JSONP sheet read (add this ABOVE loadSheetData)
+function loadSheetViaJsonp(sheetName) {
+  return new Promise((resolve) => {
+    jsonpRequest({ sheet: sheetName }, (data) => {
+      resolve(data);
+    });
+  });
+}
+
+async function loadSheetData(sheetName, targetArray, renderFunc, updateDashboardFunc) { 
+  if (!checkPassword()) return;
+  if(!confirm(`Load ${sheetName} from Google Sheet? This will REPLACE current local data.`)) return; 
+  try { 
+    let data = await loadSheetViaJsonp(sheetName);
+    if(data && data.status === "success" && Array.isArray(data.records)){ 
+      if(targetArray === 'expenses'){ 
+        expenses = data.records.map(r=>({...r, paymentMethod: r.paymentMethod || 'Cash'})); 
+        saveAll(); renderFunc(); if(updateDashboardFunc) updateDashboardFunc(); 
+        showToast(`Loaded ${expenses.length} expenses`); populateAnalysisFilters(); 
+      } 
+      else if(targetArray === 'loans'){ 
+        loans = data.records; saveAll(); renderFunc(); if(updateDashboardFunc) updateDashboardFunc(); 
+        showToast(`Loaded ${loans.length} loans`); 
+      } 
+      else if(targetArray === 'contacts'){ 
+        contacts = data.records; saveAll(); renderFunc(); updateContactSelect(); 
+        showToast(`Loaded ${contacts.length} contacts`); 
+      } 
+      else if(targetArray === 'notes'){ 
+        notes = data.records; saveAll(); renderFunc(); 
+        showToast(`Loaded ${notes.length} notes`); 
+      } 
+      else if(targetArray === 'transactions'){ 
+        transactions = data.records; saveAll(); renderFunc(); 
+        showToast(`Loaded ${transactions.length} transactions`); 
+      } 
+      else if(targetArray === 'credentials'){ 
+        credentials = data.records; saveAll(); renderFunc(); 
+        showToast(`Loaded ${credentials.length} credentials`); 
+      } 
+      else if(targetArray === 'misc'){ 
+        miscItems = data.records; saveAll(); renderFunc(); 
+        showToast(`Loaded ${miscItems.length} misc entries`); 
+      } 
+    } else { 
+      showToast("No data or error: " + (data?.message || "Unknown"), true); 
+    } 
+  } catch(e){ showToast("Load failed: " + e.message, true); } 
+}
+  async function syncToSheet(sheetName, records) { if(!records.length){ showToast("No data to sync", true); return; } try { await fetch(GOOGLE_SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sheet: sheetName, records }) }); showToast(`✅ ${sheetName} synced`); } catch(e){ showToast("Sync failed", true); } }
+  function getRecipientEmails() { let manual = document.getElementById('manualEmails').value; let emails = manual.split(',').map(e=>e.trim()).filter(e=>e); return [...new Set(emails)]; }
+  function scheduleReminder() { let rec = getRecipientEmails(); if(rec.length===0){ alert("Enter at least one email in Manual Emails"); return; } let date = document.getElementById('reminderDate').value, time = document.getElementById('reminderTime').value; if(!date || !time){ alert("Set date and time"); return; } let scheduledDateTime = new Date(`${date}T${time}`); if(isNaN(scheduledDateTime)){ alert("Invalid datetime"); return; } let subject = document.getElementById('reminderSubject').value.trim() || "Scheduled Reminder"; let message = document.getElementById('reminderMessage').value.trim(); if(!message){ alert("Message empty"); return; } let file = document.getElementById('attachFile').files[0]; let reader = new FileReader(); reader.onload = e => { scheduledReminders.push({ id: Date.now(), recipients: rec, subject, message, scheduledTime: scheduledDateTime.toISOString(), sent: false, attachedFileData: file ? e.target.result.split(',')[1] : null, attachedFileName: file ? file.name : null, attachedMimeType: file ? file.type : null }); saveAll(); renderScheduledReminders(); showToast(`⏰ Scheduled for ${scheduledDateTime.toLocaleString()}`); document.getElementById('reminderDate').value=''; document.getElementById('reminderTime').value=''; document.getElementById('reminderSubject').value=''; document.getElementById('reminderMessage').value=''; document.getElementById('attachFile').value=''; document.getElementById('manualEmails').value=''; }; if(file) reader.readAsDataURL(file); else reader.onload({target:{result:null}})(); }
+  async function sendNowReminder() { let rec = getRecipientEmails(); if(rec.length===0){ alert("Enter at least one email in Manual Emails"); return; } let subject = document.getElementById('reminderSubject').value.trim() || "Instant Reminder"; let message = document.getElementById('reminderMessage').value.trim(); if(!message){ alert("Message empty"); return; } let file = document.getElementById('attachFile').files[0]; let reader = new FileReader(); reader.onload = async e => { let fileBase64=null, fileName=null, mimeType=null; if(file){ fileBase64=e.target.result.split(',')[1]; fileName=file.name; mimeType=file.type; } else { const {jsPDF}=window.jspdf; let doc=new jsPDF(); doc.setFontSize(18); doc.text("Reminder from FinMate",20,20); doc.setFontSize(12); doc.text(`Sent: ${new Date().toLocaleString()}`,20,35); doc.text(`Subject: ${subject}`,20,50); doc.text("Message:",20,65); let lines=doc.splitTextToSize(message,170); doc.text(lines,20,75); doc.setFontSize(10); doc.text("Sent from FinMate Pro",20,85); fileBase64=doc.output('datauristring').split(',')[1]; fileName=`reminder_${Date.now()}.pdf`; mimeType='application/pdf'; } let successCount=0; for(let email of rec){ await fetch(GOOGLE_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'sendEmail',to:email,subject,body:message,fileBase64,fileName,mimeType})}); successCount++; } showToast(`Email sent to ${successCount}/${rec.length} recipients`); }; if(file) reader.readAsDataURL(file); else reader.onload({target:{result:null}})(); }
+  function checkAndFireReminders() { let now=new Date(); scheduledReminders.forEach(r=>{ if(!r.sent && new Date(r.scheduledTime)<=now){ (async()=>{ let fileBase64=r.attachedFileData, fileName=r.attachedFileName, mimeType=r.attachedMimeType; if(!fileBase64){ const {jsPDF}=window.jspdf; let doc=new jsPDF(); doc.setFontSize(18); doc.text("Reminder from FinMate",20,20); doc.setFontSize(12); doc.text(`Scheduled: ${r.scheduledTime}`,20,35); doc.text(`Subject: ${r.subject}`,20,50); doc.text("Message:",20,65); let lines=doc.splitTextToSize(r.message,170); doc.text(lines,20,75); doc.setFontSize(10); doc.text("Sent from FinMate Pro",20,85); fileBase64=doc.output('datauristring').split(',')[1]; fileName=`reminder_${r.id}.pdf`; mimeType='application/pdf'; } let recipients=r.recipients||(r.email?[r.email]:[]); let sc=0; for(let email of recipients){ await fetch(GOOGLE_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'sendEmail',to:email,subject:r.subject,body:r.message,fileBase64,fileName,mimeType})}); sc++; } if(sc>0){ r.sent=true; saveAll(); renderScheduledReminders(); showToast(`✅ Reminder sent to ${sc} recipient(s)`); } })(); } }); }
+  function autoCalcAmount() { let qty = parseFloat(document.getElementById('tpQuantity').value)||0; let rate = parseFloat(document.getElementById('tpRate').value)||0; document.getElementById('tpAmount').value = (qty*rate).toFixed(2); }
+
+  // ==================== DRAWER & PAGE RENDERING ====================
+  const pages = [
+    { id: "dashboardPage", title: "📊 Dashboard" }, { id: "expenseAddPage", title: "💰 Add Expense" }, { id: "loanAddPage", title: "📌 Money Transaction" }, { id: "expenseListPage", title: "📋 Expense Records" }, { id: "expenseAnalysisPage", title: "📈 Expense Analysis" }, { id: "loanListPage", title: "📜 Loan Records" }, { id: "sellPurchasePage", title: "🔄 Sell/Purchase" }, { id: "examFormPage", title: "📝 Exam Form" }, { id: "contactsPage", title: "📇 Contacts" }, { id: "notesPage", title: "📒 Notes" }, { id: "reminderPage", title: "⏰ Email Reminder" }, { id: "mediaUploadPage", title: "📸 Media Hub" }, { id: "credentialsPage", title: "🔐 App Credentials" }, { id: "miscPage", title: "📋 Miscellaneous" }
+  ];
+  function buildDrawer() { let nav = document.getElementById('drawerNav'); nav.innerHTML = ''; pages.forEach(p => { let btn = document.createElement('button'); btn.setAttribute('data-page', p.id); btn.innerHTML = p.title; nav.appendChild(btn); }); }
+  function renderAllPages() {
+    let main = document.getElementById('mainContent');
+    main.innerHTML = `
+      <div id="dashboardPage" class="page active-page"><div class="card"><h2>📈 Family Dashboard</h2><div class="summary-grid"><div class="summary-box"><h4>Total Expenses</h4><p id="dashTotalExpense">₹0</p></div><div class="summary-box"><h4>Total Lent</h4><p id="dashTotalLent">₹0</p></div><div class="summary-box"><h4>Total Borrowed</h4><p id="dashTotalBorrowed">₹0</p></div><div class="summary-box"><h4>Pending Receive</h4><p id="dashPendingReceive">₹0</p></div></div><div class="chart-container"><canvas id="expensePieChart"></canvas></div></div></div>
+      <div id="expenseAddPage" class="page"><div class="card"><h2>➕ Add Expense</h2><div class="form-group"><label>Person *</label><input type="text" id="expensePerson" placeholder="Enter name" /></div><div class="row-2cols"><div class="form-group"><label>Date</label><input type="date" id="expenseDate" /></div><div class="form-group"><label>Time</label><input type="time" id="expenseTime" /></div></div><div class="form-group"><label>Amount (₹) *</label><input type="number" id="expenseAmount" /></div><div class="form-group"><label>Category</label><select id="expenseCategory"><option>Food</option><option>Travel</option><option>Shopping</option><option>Medical</option><option>Bills</option><option>Other</option></select></div><div class="form-group"><label>Payment Method</label><select id="expensePaymentMethod"><option>Cash</option><option>UPI</option><option>Card</option><option>Net Banking</option><option>Wallet</option></select></div><div class="form-group"><label>Description</label><textarea id="expenseNote" rows="2"></textarea></div><div class="center-buttons"><button class="btn-primary" id="addExpenseBtn">💾 Save Expense</button><button class="btn-outline" id="cancelExpenseEditBtn" style="display:none;">❌ Cancel Edit</button></div></div></div>
+      <div id="loanAddPage" class="page"><div class="card"><h2>💸 Money Transaction</h2><div class="form-group"><label>Transaction Type</label><select id="transactionType"><option value="lent">📤 I lent (they owe me)</option><option value="borrowed">📥 I borrowed (I owe them)</option></select></div><div class="form-group"><label>Counterparty Name *</label><input type="text" id="counterpartyName" /></div><div class="form-group"><label>Amount (₹) *</label><input type="number" id="loanAmount" /></div><div class="form-group"><label>Purpose</label><input type="text" id="loanPurpose" /></div><div class="row-2cols"><div class="form-group"><label>Date</label><input type="date" id="loanDate" /></div><div class="form-group"><label>Time</label><input type="time" id="loanTime" /></div></div><div class="form-group"><label>Due Date *</label><input type="date" id="loanDueDate" /></div><div class="center-buttons"><button class="btn-success" id="saveLoanBtn">💾 Save</button></div></div></div>
+      <div id="expenseListPage" class="page"><div class="card"><div class="flex-between"><h2>📑 Expense Records</h2><div><button id="loadExpensesFromSheet" class="btn-primary small-btn">📥 Load from Sheet</button><button id="syncExpensesSheetBtn" class="btn-primary small-btn" style="margin-left:8px;">📤 Push to Sheet</button></div></div><div class="table-wrapper"><table id="expenseTable"><thead><tr><th>Person</th><th>Category</th><th>Amount</th><th>Date</th><th>Time</th><th>Payment Method</th><th>Note</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div></div>
+      <div id="expenseAnalysisPage" class="page"><div class="card"><h2>📊 Expense Analysis</h2><div class="filter-bar"><div class="filter-group"><label>Person</label><select id="analysisPerson"><option value="">All</option></select></div><div class="filter-group"><label>Payment Method</label><select id="analysisPaymentMethod"><option value="">All</option><option>Cash</option><option>UPI</option><option>Card</option><option>Net Banking</option><option>Wallet</option></select></div><div class="filter-group"><label>Year</label><select id="analysisYear"><option value="">All Years</option></select></div><div class="filter-group"><label>Month (YYYY-MM)</label><input type="month" id="analysisMonthSelect" /></div><div class="filter-group"><label>From Date</label><input type="date" id="analysisFromDate" /></div><div class="filter-group"><label>To Date</label><input type="date" id="analysisToDate" /></div><div class="filter-group"><button id="applyAnalysisFilter" class="btn-primary small-btn">Apply</button><button id="resetAnalysisFilter" class="btn-outline small-btn">Reset</button></div></div><div class="row-2cols"><div class="chart-container"><canvas id="analysisChart"></canvas></div><div><h3>Summary</h3><p id="analysisTotalAmount">Total: ₹0</p><p id="analysisFilterInfo"></p></div></div><div class="table-wrapper"><table id="analysisTable"><thead><tr><th>Date</th><th>Person</th><th>Category</th><th>Amount</th><th>Payment Method</th><th>Note</th></table></thead><tbody></tbody></table></div></div></div>
+      <div id="loanListPage" class="page"><div class="card"><div class="flex-between"><h2>📜 Loan Records</h2><div><button id="loadLoansFromSheet" class="btn-primary small-btn">📥 Load from Sheet</button><button id="syncLoansSheetBtn" class="btn-primary small-btn" style="margin-left:8px;">📤 Push to Sheet</button></div></div><div class="table-wrapper"><table id="loanTable"><thead><tr><th>Type</th><th>Counterparty</th><th>Amount</th><th>Purpose</th><th>Date</th><th>Due Date</th><th>Status</th><th>Payment Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div></div>
+      <div id="sellPurchasePage" class="page"><div class="card"><h2>🔄 Sell / Purchase Transaction</h2><div id="transactionEditPanel" style="display:none;"></div><div class="form-group"><label>Party Name *</label><input type="text" id="tpParty" /></div><div class="form-group"><label>Transaction Type</label><select id="tpType"><option value="Sell">📤 Sell</option><option value="Purchase">📥 Purchase</option></select></div><div class="row-2cols"><div class="form-group"><label>Quantity (kg)</label><input type="number" id="tpQuantity" step="0.01" /></div><div class="form-group"><label>Rate (₹/kg)</label><input type="number" id="tpRate" step="0.01" /></div></div><div class="form-group"><label>Amount (auto)</label><input type="number" id="tpAmount" readonly style="background:#f1f5f9;" /></div><div class="row-2cols"><div class="form-group"><label>📅 Transaction Date</label><input type="date" id="tpTransactionDate" /></div><div class="form-group"><label>💰 Due Amount (₹)</label><input type="number" id="tpDueAmount" step="0.01" /></div></div><div class="form-group"><label>📅 Due Clear Date</label><input type="date" id="tpDueClearDate" /></div><div class="form-group"><label>Status</label><div class="center-buttons"><label><input type="radio" name="tpStatus" value="Paid" /> Paid</label><label><input type="radio" name="tpStatus" value="Partial" /> Partial</label><label><input type="radio" name="tpStatus" value="Due" /> Due</label></div></div><div class="form-group"><label>Remarks</label><textarea id="tpRemarks" rows="2"></textarea></div><div class="center-buttons"><button id="saveTransactionBtn" class="btn-primary">💾 Save Transaction</button></div><hr /><div class="flex-between"><h3>All Transactions</h3><div><button id="loadTransactionsFromSheet" class="btn-primary small-btn">📥 Load from Sheet</button><button id="syncTransactionsSheetBtn" class="btn-primary small-btn" style="margin-left:8px;">📤 Push to Sheet</button></div></div><div class="table-wrapper"><table id="transactionsTable"><thead><tr><th>Type</th><th>Party</th><th>Qty</th><th>Rate</th><th>Amount</th><th>Transaction Date</th><th>Due Amount</th><th>Due Clear Date</th><th>Status</th><th>Remarks</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div></div>
+      <div id="examFormPage" class="page"><div class="card"><h2>📝 Exam Registration</h2><div class="form-group"><label>Full Name *</label><input type="text" id="examFillerName" /></div><div class="form-group"><label>Exam Name *</label><input type="text" id="examFormName" /></div><div class="form-group"><label>Registration Number *</label><input type="text" id="examRegNo" /></div><div class="form-group"><label>Password</label><input type="text" id="examPassword" /></div><div class="form-group"><label>Exam Date</label><input type="date" id="examDate" /></div><div class="form-group"><label>Remarks</label><textarea id="examDescription" rows="2"></textarea></div><div class="center-buttons"><button id="submitExamFormBtn" class="btn-primary">📤 Submit Exam</button><button id="cancelExamEditBtn" class="btn-outline" style="display:none;">❌ Cancel Edit</button></div><div id="examFormStatus" style="margin-top:15px;"></div><hr /><h3>📜 Exam Submission History</h3><div id="examHistoryList"></div><div class="center-buttons"><button id="loadExamFromSheetBtn" class="btn-primary small-btn">📥 Load from Sheet</button><button id="syncExamToSheetBtn" class="btn-primary small-btn">📤 Sync to Sheet</button></div></div></div>
+      <div id="contactsPage" class="page"><div class="card"><h2>📇 Contacts</h2><div id="contactEditPanel" style="display:none;"></div><div class="form-group"><label>Full Name *</label><input type="text" id="contactName" /></div><div class="form-group"><label>Email</label><input type="email" id="contactEmail" /></div><div class="form-group"><label>Phone</label><input type="tel" id="contactPhone" /></div><div class="form-group"><label>Address</label><input type="text" id="contactAddress" /></div><div class="form-group"><label>Relation</label><input type="text" id="contactRelation" /></div><div class="center-buttons"><button id="saveContactBtn" class="btn-primary">💾 Save Contact</button></div><hr /><div class="flex-between"><h3>Saved Contacts</h3><div><button id="loadContactsFromSheet" class="btn-primary small-btn">📥 Load from Sheet</button><button id="syncContactsSheetBtn" class="btn-primary small-btn" style="margin-left:8px;">📤 Push to Sheet</button></div></div><div class="table-wrapper"><table id="contactsTable"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Relation</th><th>Actions</th><tr></thead><tbody></tbody></table></div></div></div>
+      <div id="notesPage" class="page"><div class="card"><h2>📒 Notes with Purpose</h2><div id="noteEditPanel" style="display:none;"></div><div class="form-group"><label>Purpose / Title</label><input type="text" id="notePurpose" /></div><div class="form-group"><label>Write Note</label><textarea id="noteContent" rows="3"></textarea></div><div class="center-buttons"><button id="saveNoteBtn" class="btn-primary">💾 Save Note</button></div><hr /><div class="flex-between"><h3>All Notes</h3><div><button id="loadNotesFromSheet" class="btn-primary small-btn">📥 Load from Sheet</button><button id="syncNotesSheetBtn" class="btn-primary small-btn" style="margin-left:8px;">📤 Push to Sheet</button></div></div><div class="table-wrapper"><table id="notesTable"><thead><tr><th>Date</th><th>Purpose</th><th>Note</th><th>Actions</th></td></thead><tbody></tbody></table></div></div></div>
+      <div id="reminderPage" class="page"><div class="card"><h2>⏰ Email Reminder</h2><div id="contactDropdownContainer"></div><div class="form-group"><label>Or Manual Emails (comma)</label><textarea id="manualEmails" rows="2"></textarea></div><div class="row-2cols"><div class="form-group"><label>Date</label><input type="date" id="reminderDate" /></div><div class="form-group"><label>Time</label><input type="time" id="reminderTime" /></div></div><div class="form-group"><label>Subject</label><input type="text" id="reminderSubject" /></div><div class="form-group"><label>Message</label><textarea id="reminderMessage" rows="4"></textarea></div><div class="form-group"><label>Attachment (optional)</label><input type="file" id="attachFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" /></div><div class="center-buttons"><button id="scheduleReminderBtn" class="btn-success">⏱️ Schedule</button><button id="sendReminderNowBtn" class="btn-primary">📧 Send Now</button></div><hr /><h3>Reminder History</h3><div id="scheduledRemindersList"></div></div></div>
+      <div id="mediaUploadPage" class="page"><div class="card"><h2>📸 Media Hub – Multiple Uploads (One Folder)</h2><div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center;"><input type="text" id="customFolderName" placeholder="New folder name" /><select id="presetFolderSelect"><option value="">-- Preset --</option><option value="Exam PDF">📚 Exam PDF</option><option value="WhatsApp PDF">💬 WhatsApp PDF</option><option value="WhatsApp Image">🖼️ WhatsApp Image</option><option value="Personal">👤 Personal</option><option value="Important Event">🎉 Event</option><option value="AnyFiles">📁 Any Files</option></select><select id="recentFoldersSelect"><option value="">-- Recent --</option></select><label><input type="checkbox" id="overwriteCheckbox" /> 🔄 Overwrite</label><button id="clearQueueBtn" class="btn-outline small-btn">🧹 Clear All</button></div><div id="multiDropzone" style="border:2px dashed #7c3aed; border-radius:36px; padding:40px; text-align:center; background:#f8fafc; cursor:pointer;">📂 Drag & drop multiple files or click</div><input type="file" id="multiFileInput" multiple style="display:none;" /><div id="selectedFilesPreview"></div><div class="center-buttons"><button id="uploadAllFilesBtn" class="btn-primary">🚀 Upload All to Selected Folder</button></div><div class="progress-bar"><div class="progress-fill" id="multiProgressFill"></div></div><div id="multiUploadStatus">Ready</div><div class="file-manager"><h3>📁 File Manager – Import & Manage</h3><div class="flex-between" style="justify-content:center;"><input type="text" id="currentManageFolder" placeholder="Folder name" style="flex:2; max-width:300px;" /><button id="refreshFileListBtn" class="btn-primary small-btn">📥 IMPORT FILES</button></div><div id="fileListContainer"></div></div></div></div>
+      <div id="credentialsPage" class="page"><div class="card"><h2>🔐 App Credentials</h2><div class="form-group"><label>Name *</label><input type="text" id="credName" /></div><div class="form-group"><label>App ID *</label><input type="text" id="credAppId" /></div><div class="form-group"><label>Password *</label><input type="text" id="credPassword" /></div><div class="form-group"><label>Description</label><textarea id="credDescription" rows="2"></textarea></div><div class="form-group"><label>Type</label><select id="credType"><option>API</option><option>OAuth</option><option>Database</option></select></div><div class="center-buttons"><button id="saveCredBtn" class="btn-primary">💾 Save</button></div><hr /><div class="flex-between"><h3>Saved Credentials</h3><div><button id="loadCredentialsFromSheet" class="btn-primary small-btn">📥 Load from Sheet</button><button id="syncCredentialsSheetBtn" class="btn-primary small-btn">📤 Push</button></div></div><div class="table-wrapper"><table id="credentialsTable"><thead><tr><th>Name</th><th>App ID</th><th>Password</th><th>Type</th><th>Description</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div></div>
+      <div id="miscPage" class="page"><div class="card"><h2>📋 Miscellaneous (10 fields)</h2><div class="row-5cols"><div class="form-group"><label>Field 1 *</label><input type="text" id="miscField1" /></div><div class="form-group"><label>Field 2</label><input type="text" id="miscField2" /></div><div class="form-group"><label>Field 3</label><input type="text" id="miscField3" /></div><div class="form-group"><label>Field 4</label><input type="text" id="miscField4" /></div><div class="form-group"><label>Field 5</label><input type="text" id="miscField5" /></div><div class="form-group"><label>Field 6</label><input type="text" id="miscField6" /></div><div class="form-group"><label>Field 7</label><input type="text" id="miscField7" /></div><div class="form-group"><label>Field 8</label><input type="text" id="miscField8" /></div><div class="form-group"><label>Field 9</label><input type="text" id="miscField9" /></div><div class="form-group"><label>Field 10</label><input type="text" id="miscField10" /></div></div><div class="center-buttons"><button id="saveMiscBtn" class="btn-primary">💾 Save Entry</button><button id="cancelMiscEditBtn" class="btn-outline" style="display:none;">Cancel</button></div><hr /><div class="flex-between"><h3>All Entries</h3><div><button id="loadMiscFromSheet" class="btn-primary small-btn">📥 Load</button><button id="syncMiscSheetBtn" class="btn-primary small-btn">📤 Push</button></div></div><div class="table-wrapper"><table id="miscTable"><thead><tr><th>F1</th><th>F2</th><th>F3</th><th>F4</th><th>F5</th><th>F6</th><th>F7</th><th>F8</th><th>F9</th><th>F10</th><th>Actions</th></table></thead><tbody></tbody></table></div></div></div>
+    `;
+  }
+
+  // ==================== INITIALIZATION ====================
+  window.onload = () => {
+    renderAllPages(); buildDrawer(); loadData();
+    let today = new Date().toISOString().slice(0,10);
+    let nowTime = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    if(document.getElementById('expenseDate')) document.getElementById('expenseDate').value = today;
+    if(document.getElementById('expenseTime')) document.getElementById('expenseTime').value = nowTime;
+    if(document.getElementById('loanDate')) document.getElementById('loanDate').value = today;
+    if(document.getElementById('loanTime')) document.getElementById('loanTime').value = nowTime;
+    if(document.getElementById('tpTransactionDate')) document.getElementById('tpTransactionDate').value = today;
+    renderExpenses(); renderLoans(); renderContacts(); renderNotes(); renderTransactions(); renderMisc(); updateDashboard(); updateContactSelect(); renderScheduledReminders(); renderCredentials(); updateRecentFoldersDropdown(); renderExamHistory(); populateAnalysisFilters();
+    setInterval(checkAndFireReminders, 30000);
+    
+    // Attach event listeners
+    document.getElementById('addExpenseBtn').onclick = addOrUpdateExpense;
+    document.getElementById('cancelExpenseEditBtn').onclick = cancelExpenseEdit;
+    document.getElementById('saveLoanBtn').onclick = () => { let cp = document.getElementById('counterpartyName').value.trim(), amt = document.getElementById('loanAmount').value, due = document.getElementById('loanDueDate').value; if (!cp || !amt || !due) { alert("Required fields"); return; } loans.push({ id: Date.now(), type: document.getElementById('transactionType').value, counterparty: cp, amount: Number(amt), purpose: document.getElementById('loanPurpose').value, date: document.getElementById('loanDate').value, time: document.getElementById('loanTime').value, dueDate: due, status: 'pending', paymentDate: '' }); saveAll(); renderLoans(); updateDashboard(); showToast("Transaction saved"); document.getElementById('counterpartyName').value = ''; document.getElementById('loanAmount').value = ''; document.getElementById('loanPurpose').value = ''; document.getElementById('loanDueDate').value = ''; };
+    document.getElementById('saveContactBtn').onclick = addOrUpdateContact;
+    document.getElementById('saveNoteBtn').onclick = addOrUpdateNote;
+    document.getElementById('saveTransactionBtn').onclick = addOrUpdateTransaction;
+    document.getElementById('scheduleReminderBtn').onclick = scheduleReminder;
+    document.getElementById('sendReminderNowBtn').onclick = sendNowReminder;
+    document.getElementById('tpQuantity').addEventListener('input', autoCalcAmount);
+    document.getElementById('tpRate').addEventListener('input', autoCalcAmount);
+    document.getElementById('syncExpensesSheetBtn').onclick = () => syncToSheet("Expenses", expenses);
+    document.getElementById('syncLoansSheetBtn').onclick = () => syncToSheet("Loans", loans);
+    document.getElementById('syncContactsSheetBtn').onclick = () => syncToSheet("Contacts", contacts);
+    document.getElementById('syncNotesSheetBtn').onclick = () => syncToSheet("Notes", notes);
+    document.getElementById('syncTransactionsSheetBtn').onclick = () => syncToSheet("Transactions", transactions);
+    document.getElementById('submitExamFormBtn').onclick = submitOrUpdateExam;
+    document.getElementById('cancelExamEditBtn').onclick = cancelExamEdit;
+    document.getElementById('loadExamFromSheetBtn').onclick = loadExamFromSheet;
+    document.getElementById('syncExamToSheetBtn').onclick = syncExamToSheet;
+    document.getElementById('saveCredBtn').onclick = addOrUpdateCredential;
+    document.getElementById('syncCredentialsSheetBtn').onclick = () => syncToSheet("AppCredentials", credentials);
+    document.getElementById('applyAnalysisFilter').onclick = renderAnalysis;
+    document.getElementById('resetAnalysisFilter').onclick = resetAnalysisFilters;
+    renderAnalysis();
+    document.getElementById('loadExpensesFromSheet').onclick = () => loadSheetData('Expenses', 'expenses', renderExpenses, updateDashboard);
+    document.getElementById('loadLoansFromSheet').onclick = () => loadSheetData('Loans', 'loans', renderLoans, updateDashboard);
+    document.getElementById('loadContactsFromSheet').onclick = () => loadSheetData('Contacts', 'contacts', renderContacts, null);
+    document.getElementById('loadNotesFromSheet').onclick = () => loadSheetData('Notes', 'notes', renderNotes, null);
+    document.getElementById('loadTransactionsFromSheet').onclick = () => loadSheetData('Transactions', 'transactions', renderTransactions, null);
+    document.getElementById('loadCredentialsFromSheet').onclick = () => loadSheetData('AppCredentials', 'credentials', renderCredentials, null);
+    document.getElementById('loadMiscFromSheet').onclick = () => loadSheetData('Miscellaneous', 'misc', renderMisc, null);
+    document.getElementById('syncMiscSheetBtn').onclick = () => syncToSheet("Miscellaneous", miscItems);
+    document.getElementById('saveMiscBtn').onclick = addOrUpdateMisc;
+    document.getElementById('cancelMiscEditBtn').onclick = cancelMiscEdit;
+    
+    // Media Hub: multiple file selection
+    let dropzone = document.getElementById('multiDropzone'), fileInput = document.getElementById('multiFileInput');
+    if(dropzone && fileInput){
+      dropzone.onclick = () => fileInput.click();
+      dropzone.ondragover = e => { e.preventDefault(); dropzone.style.borderColor='#7c3aed'; };
+      dropzone.ondragleave = () => { dropzone.style.borderColor='#7c3aed'; };
+      dropzone.ondrop = e => { e.preventDefault(); addFilesToQueue(Array.from(e.dataTransfer.files)); };
+      fileInput.onchange = e => { addFilesToQueue(Array.from(e.target.files)); fileInput.value=''; };
+    }
+    document.getElementById('uploadAllFilesBtn').onclick = uploadAllQueuedFiles;
+    document.getElementById('clearQueueBtn').onclick = clearMediaQueue;
+    document.getElementById('refreshFileListBtn').onclick = () => { if(checkPassword()) refreshFileList(); };
+    
+    // Folder selection exclusivity
+    const presetSelect = document.getElementById('presetFolderSelect');
+    const recentSelect = document.getElementById('recentFoldersSelect');
+    const customInput = document.getElementById('customFolderName');
+    if(presetSelect) presetSelect.addEventListener('change', () => { if(presetSelect.value) syncFolderSelection('preset'); });
+    if(recentSelect) recentSelect.addEventListener('change', () => { if(recentSelect.value) syncFolderSelection('recent'); });
+    if(customInput) customInput.addEventListener('input', () => { if(customInput.value.trim()) syncFolderSelection('custom'); });
+    
+    document.getElementById('recentFoldersSelect').onchange = function(){ if(this.value) { document.getElementById('customFolderName').value=this.value; document.getElementById('currentManageFolder').value=this.value; syncFolderSelection('recent'); } };
+    
+    // Drawer & navigation
+    let drawer = document.getElementById('drawer'), overlay = document.getElementById('overlay');
+    document.getElementById('menuToggleBtn').onclick = () => { drawer.classList.add('open'); overlay.classList.add('active'); };
+    overlay.onclick = () => { drawer.classList.remove('open'); overlay.classList.remove('active'); };
+    document.querySelectorAll('.drawer-nav button').forEach(btn => { btn.addEventListener('click', () => { let id = btn.getAttribute('data-page'); document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page')); document.getElementById(id).classList.add('active-page'); drawer.classList.remove('open'); overlay.classList.remove('active'); if(id==='mediaUploadPage') refreshFileList(); if(id==='expenseListPage') renderExpenses(); if(id==='loanListPage') renderLoans(); if(id==='dashboardPage') updateDashboard(); if(id==='contactsPage'){ renderContacts(); updateContactSelect(); } if(id==='notesPage') renderNotes(); if(id==='sellPurchasePage') renderTransactions(); if(id==='reminderPage') renderScheduledReminders(); if(id==='credentialsPage') renderCredentials(); if(id==='expenseAnalysisPage') { populateAnalysisFilters(); renderAnalysis(); } if(id==='miscPage') renderMisc(); if(id==='examFormPage') renderExamHistory(); }); });
+  };
+</script>
+</body>
+</html>
